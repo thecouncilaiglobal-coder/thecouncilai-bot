@@ -21,7 +21,7 @@ def run_setup() -> int:
     print("  TheCouncilAI Bot Setup")
     print("=" * 50 + "\n")
 
-    # Step 1: Credentials
+    # Step 1: Credentials (only email and password)
     print("📧 Hesap Bilgileri")
     print("-" * 30)
     email = input(f"Email [{cfg.email or ''}]: ").strip() or cfg.email
@@ -38,41 +38,8 @@ def run_setup() -> int:
     if not cfg.device_id:
         cfg.device_id = uuid.uuid4().hex
 
-    # Step 2: Broker selection
-    print("\n🏦 Broker Seçimi")
-    print("-" * 30)
-    broker = input("Broker (alpaca/ibkr) [alpaca]: ").strip().lower() or "alpaca"
-    if broker not in ("alpaca", "ibkr"):
-        print("❌ Desteklenmeyen broker")
-        return 2
-    cfg.broker = broker  # type: ignore
-
-    if broker == "alpaca":
-        if not cfg.alpaca.api_key:
-            cfg.alpaca.api_key = input("Alpaca API Key: ").strip()
-        if not cfg.alpaca.api_secret:
-            cfg.alpaca.api_secret = getpass.getpass("Alpaca API Secret: ").strip()
-        
-        print("\n📝 Trading URL Seçenekleri:")
-        print("   1. Paper (Test): https://paper-api.alpaca.markets")
-        print("   2. Live (Gerçek): https://api.alpaca.markets")
-        mode_choice = input("Mod seçin (1/2) [1]: ").strip() or "1"
-        if mode_choice == "2":
-            cfg.alpaca.trading_base_url = "https://api.alpaca.markets"
-            print("⚠️  UYARI: CANLI İŞLEM MODU SEÇİLDİ!")
-        else:
-            cfg.alpaca.trading_base_url = "https://paper-api.alpaca.markets"
-            print("✅ Paper trading modu seçildi")
-    else:
-        host = input(f"IBKR Host [{cfg.ibkr.host}]: ").strip()
-        if host:
-            cfg.ibkr.host = host
-        port = input(f"IBKR Port [{cfg.ibkr.port}]: ").strip()
-        if port:
-            cfg.ibkr.port = int(port)
-        cid = input(f"IBKR Client ID [{cfg.ibkr.client_id}]: ").strip()
-        if cid:
-            cfg.ibkr.client_id = int(cid)
+    # NOTE: Broker and API keys are configured via mobile app (E2EE)
+    # No need to ask for them here
 
     save_config(cfg)
 
@@ -139,7 +106,6 @@ def run_setup() -> int:
                     "bot_device_id": device_id,
                     "bot_paired": True,
                     "bot_last_seen": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
-                    "broker": broker,
                 })
             except Exception:
                 pass
@@ -162,7 +128,6 @@ def run_setup() -> int:
                 "bot_pair_code": pair_code,
                 "bot_paired": False,
                 "bot_last_seen": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
-                "broker": broker,
             })
         except Exception:
             pass
