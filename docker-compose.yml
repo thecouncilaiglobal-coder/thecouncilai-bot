@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # TheCouncilAI Trading Bot
+  bot:
+    image: thecouncilaiglobal/thecouncilai-bot:latest
+    container_name: thecouncilai-bot
+    restart: unless-stopped
+    volumes:
+      # Persistent storage for bot configuration and state
+      - bot-data:/shared/bot
+    environment:
+      # Backend Services
+      - POCKETBASE_URL=${POCKETBASE_URL:-http://pocketbase:8090}
+      - CONTROL_API_URL=${CONTROL_API_URL:-http://control-api:8001}
+      - BRAIN_API_URL=${BRAIN_API_URL:-http://brain-api:8080}
+      - CENTRIFUGO_WS_URL=${CENTRIFUGO_WS_URL:-ws://centrifugo:8000/connection/websocket}
+      
+      # Broker Configuration
+      - ALPACA_DATA_BASE_URL=${ALPACA_DATA_BASE_URL:-https://data.alpaca.markets}
+      
+      # Bot State Directory
+      - BOT_STATE_DIR=${BOT_STATE_DIR:-/shared/bot}
+    labels:
+      # Enable auto-update via Watchtower
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - bot-network
+
+  # Watchtower - Automatic Updates
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: thecouncilai-watchtower
+    restart: unless-stopped
+    volumes:
+      # Docker socket access for container management
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # Check for updates every 24 hours (86400 seconds)
+      - WATCHTOWER_POLL_INTERVAL=${WATCHTOWER_POLL_INTERVAL:-86400}
+      
+      # Remove old images after updating
+      - WATCHTOWER_CLEANUP=${WATCHTOWER_CLEANUP:-true}
+      
+      # Include restarting containers
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      
+      # Only update containers with the watchtower label
+      - WATCHTOWER_LABEL_ENABLE=true
+      
+      # No startup delay
+      - WATCHTOWER_NO_STARTUP_MESSAGE=false
+    networks:
+      - bot-network
+
+volumes:
+  # Persistent volume for bot data
+  bot-data:
+    driver: local
+
+networks:
+  # Isolated network for bot services
+  bot-network:
+    driver: bridge
