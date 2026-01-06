@@ -57,3 +57,29 @@ def log_trade(
         con.commit()
     finally:
         con.close()
+
+
+def get_recent_trades(limit: int = 10) -> list[dict]:
+    """Get the most recent trades from the database."""
+    p = _db_path()
+    if not p.exists():
+        return []
+    
+    con = sqlite3.connect(p)
+    con.row_factory = sqlite3.Row
+    try:
+        cur = con.execute(
+            """
+            SELECT id, ts_ms as timestamp, symbol, side, qty, score, 
+                   price_est as price, reason, broker, mode
+            FROM trades 
+            ORDER BY ts_ms DESC 
+            LIMIT ?
+            """,
+            (limit,)
+        )
+        rows = cur.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        con.close()
+
